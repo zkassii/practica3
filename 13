@@ -1,0 +1,102 @@
+import json
+import os
+from cat import Cat
+
+#5.1
+def create_fruits_json():
+    fruits = [
+        {"name": "Яблоко", "price": 120},
+        {"name": "Банан", "price": 150},
+        {"name": "Апельсин", "price": 180},
+        {"name": "Киви", "price": 250},
+        {"name": "Манго", "price": 300}
+    ]
+    
+    with open("fruits.json", "w", encoding="utf-8") as f:
+        json.dump(fruits, f, ensure_ascii=False, indent=4)
+    print("✅ Файл fruits.json успешно создан!")
+
+
+#Коты
+FILE_NAME = "cats.json"
+
+def load_cats():
+    if os.path.exists(FILE_NAME):
+        with open(FILE_NAME, "r", encoding="utf-8") as f:
+            return [Cat.from_dict(cat) for cat in json.load(f)]
+    return []
+
+def save_cats(cats):
+    with open(FILE_NAME, "w", encoding="utf-8") as f:
+        json.dump([cat.to_dict() for cat in cats], f, ensure_ascii=False, indent=4)
+
+
+# Главное меню
+def main():
+    create_fruits_json()
+    
+    cats = load_cats()
+    
+    while True:
+        print("\n" + "="*55)
+        print("Меню:")
+        print("1. Добавить нового кота")
+        print("2. Показать всех котов")
+        print("3. Удалить кота по имени")
+        print("4. Сортировать по имени")
+        print("5. Сортировать по возрасту")
+        print("6. Выход")
+        print("="*55)
+        
+        choice = input("\nВыберите действие (1-6): ").strip()
+        
+        if choice == "1":   # Добавить
+            name = input("Имя кота: ").strip()
+            try:
+                age = int(input("Возраст: "))
+                color = input("Окрас: ").strip()
+                cats.append(Cat(name, age, color))
+                save_cats(cats)
+                print(f"Кот {name} добавлен!")
+            except ValueError:
+                print("Возраст должен быть числом!")
+                
+        elif choice == "2":   # Показать
+            if not cats:
+                print("Пока нет котов.")
+            else:
+                print(f"\n{'Имя':<15} {'Возраст':<10} Окрас")
+                print("-" * 45)
+                for cat in cats:
+                    print(f"{cat.name:<15} {cat.age:<10} {cat.color}")
+                    
+        elif choice == "3":   # Удалить
+            name = input("Имя кота для удаления: ").strip()
+            original_len = len(cats)
+            cats = [c for c in cats if c.name.lower() != name.lower()]
+            
+            if len(cats) < original_len:
+                save_cats(cats)
+                print(f"Кот {name} удалён.")
+            else:
+                print(f"Кот с именем '{name}' не найден.")
+                
+        elif choice == "4":   # Сортировка по имени
+            cats.sort(key=lambda x: x.name.lower())
+            save_cats(cats)
+            print("Отсортировано по имени.")
+            
+        elif choice == "5":   # Сортировка по возрасту
+            cats.sort(key=lambda x: x.age)
+            save_cats(cats)
+            print("Отсортировано по возрасту.")
+            
+        elif choice == "6":
+            print("Пока пока")
+            break
+            
+        else:
+            print("Неверный выбор.")
+
+if __name__ == "__main__":
+    main()
