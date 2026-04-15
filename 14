@@ -1,57 +1,36 @@
 import tkinter as tk
-import ctypes
 
 root = tk.Tk()
-root.title("Меню Color и Size")
+root.title("Меню и горячие клавиши")
 root.geometry("600x400")
 
-def change_frame_color(color):
-    root.configure(bg=color)  # фон на всякий случай
-    
-    try:
-        # Код для изменения цвета заголовка окна (рамки) на Windows
-        hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
-        
-        if color == "red":
-            color_code = 0x000000FF
-        elif color == "green":
-            color_code = 0x0000FF00
-        elif color == "blue":
-            color_code = 0x00FF0000
-        else:
-            color_code = 0x00FFFFFF
-            
-        ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            hwnd, 35, ctypes.byref(ctypes.c_int(color_code)), 4
-        )
-    except:
-        pass  # если не сработает — хотя бы фон поменяется
-
+def change_color(color):
+    root.configure(bg=color)
 
 def change_size(size):
     root.geometry(size)
-
 
 # Меню
 menubar = tk.Menu(root)
 root.config(menu=menubar)
 
+# Color
 color_menu = tk.Menu(menubar, tearoff=0)
 menubar.add_cascade(label="Color", menu=color_menu)
-color_menu.add_command(label="Red",   command=lambda: change_frame_color("red"),   accelerator="Ctrl+R")
-color_menu.add_command(label="Green", command=lambda: change_frame_color("green"), accelerator="Ctrl+G")
-color_menu.add_command(label="Blue",  command=lambda: change_frame_color("blue"),  accelerator="Ctrl+B")
+color_menu.add_command(label="Red", command=lambda: change_color("red"), accelerator="Ctrl+R")
+color_menu.add_command(label="Green", command=lambda: change_color("green"), accelerator="Ctrl+G")
+color_menu.add_command(label="Blue", command=lambda: change_color("blue"), accelerator="Ctrl+B")
 
+# Size
 size_menu = tk.Menu(menubar, tearoff=0)
 menubar.add_cascade(label="Size", menu=size_menu)
 size_menu.add_command(label="500x500", command=lambda: change_size("500x500"), accelerator="Ctrl+1")
 size_menu.add_command(label="700x400", command=lambda: change_size("700x400"), accelerator="Ctrl+2")
 
-
 # Горячие клавиши
-root.bind("<Control-r>", lambda e: change_frame_color("red"))
-root.bind("<Control-g>", lambda e: change_frame_color("green"))
-root.bind("<Control-b>", lambda e: change_frame_color("blue"))
+root.bind("<Control-r>", lambda e: change_color("red"))
+root.bind("<Control-g>", lambda e: change_color("green"))
+root.bind("<Control-b>", lambda e: change_color("blue"))
 root.bind("<Control-1>", lambda e: change_size("500x500"))
 root.bind("<Control-2>", lambda e: change_size("700x400"))
 
