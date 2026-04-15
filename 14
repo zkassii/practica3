@@ -1,0 +1,158 @@
+**Готово!** Вот полный разбор и код для всех заданий из лабораторной работы (ПР 13–15).
+
+### 5.1 Форма авторизации
+
+```python
+import tkinter as tk
+from tkinter import ttk
+
+root = tk.Tk()
+root.title("Авторизация")
+root.geometry("200x300")
+
+# Виджеты
+tk.Label(root, text="Логин:").pack(pady=5)
+login = tk.Entry(root)
+login.pack()
+
+tk.Label(root, text="Пароль:").pack(pady=5)
+password = tk.Entry(root, show="*")
+password.pack()
+
+remember = tk.BooleanVar()
+tk.Checkbutton(root, text="Запомнить пароль", variable=remember).pack(pady=10)
+
+tk.Button(root, text="Авторизоваться", command=lambda: print("Авторизация...")).pack(pady=10)
+
+root.mainloop()
+```
+
+### 5.2 Форма регистрации
+
+```python
+import tkinter as tk
+from tkinter import ttk
+
+root = tk.Tk()
+root.title("Регистрация")
+root.geometry("400x500")
+root.configure(bg="#f0f0f0")   # цвет фона
+
+# Основные элементы
+tk.Label(root, text="Логин:", bg="#f0f0f0").pack(anchor="w", padx=20, pady=5)
+tk.Entry(root).pack(fill="x", padx=20)
+
+tk.Label(root, text="Пароль:", bg="#f0f0f0").pack(anchor="w", padx=20, pady=5)
+tk.Entry(root, show="*").pack(fill="x", padx=20)
+
+tk.Label(root, text="О себе:", bg="#f0f0f0").pack(anchor="w", padx=20, pady=5)
+tk.Text(root, height=5).pack(fill="x", padx=20)
+
+# Переключатели пола
+gender = tk.StringVar(value="М")
+tk.Label(root, text="Пол:", bg="#f0f0f0").pack(anchor="w", padx=20, pady=(10,0))
+tk.Radiobutton(root, text="Мужской", variable=gender, value="М", bg="#f0f0f0").pack(anchor="w", padx=40)
+tk.Radiobutton(root, text="Женский", variable=gender, value="Ж", bg="#f0f0f0").pack(anchor="w", padx=40)
+
+# Список материалов (Combobox)
+tk.Label(root, text="Материк:", bg="#f0f0f0").pack(anchor="w", padx=20, pady=(10,0))
+combo = ttk.Combobox(root, values=["Европа", "Азия", "Африка", "Америка", "Австралия"])
+combo.pack(fill="x", padx=20)
+
+tk.Button(root, text="Зарегистрироваться", bg="#4CAF50", fg="white").pack(pady=20)
+
+root.mainloop()
+```
+
+### 5.3 Связь виджетов с переменными + TextVariable
+
+```python
+import tkinter as tk
+
+root = tk.Tk()
+root.title("Связь с переменными")
+root.geometry("500x400")
+
+# Переменные
+int_var = tk.IntVar(value=1)
+str_var = tk.StringVar(value="Привет")
+text_var = tk.StringVar()
+
+# Виджеты
+tk.Checkbutton(root, text="Флажок", variable=int_var).pack(pady=5)
+tk.Radiobutton(root, text="Вкл", variable=int_var, value=1).pack()
+tk.Radiobutton(root, text="Выкл", variable=int_var, value=0).pack()
+
+entry = tk.Entry(root, textvariable=text_var)
+entry.pack(pady=10)
+
+label = tk.Label(root, text="", bg="lightyellow", width=50, height=3)
+label.pack(pady=10)
+
+def update_label():
+    label.config(text=f"{int_var.get()}, {str_var.get()}, {text_var.get()}")
+
+tk.Button(root, text="Показать значения через запятую", command=update_label).pack()
+
+# Автообновление при изменении
+text_var.trace("w", lambda *args: update_label())
+
+root.mainloop()
+```
+
+### 5.4 Меню Color и Size + горячие клавиши
+
+```python
+import tkinter as tk
+
+root = tk.Tk()
+root.title("Меню и горячие клавиши")
+root.geometry("600x400")
+
+def change_color(color):
+    root.configure(bg=color)
+
+def change_size(size):
+    root.geometry(size)
+
+# Меню
+menubar = tk.Menu(root)
+root.config(menu=menubar)
+
+# Color
+color_menu = tk.Menu(menubar, tearoff=0)
+menubar.add_cascade(label="Color", menu=color_menu)
+color_menu.add_command(label="Red", command=lambda: change_color("red"), accelerator="Ctrl+R")
+color_menu.add_command(label="Green", command=lambda: change_color("green"), accelerator="Ctrl+G")
+color_menu.add_command(label="Blue", command=lambda: change_color("blue"), accelerator="Ctrl+B")
+
+# Size
+size_menu = tk.Menu(menubar, tearoff=0)
+menubar.add_cascade(label="Size", menu=size_menu)
+size_menu.add_command(label="500x500", command=lambda: change_size("500x500"), accelerator="Ctrl+1")
+size_menu.add_command(label="700x400", command=lambda: change_size("700x400"), accelerator="Ctrl+2")
+
+# Горячие клавиши
+root.bind("<Control-r>", lambda e: change_color("red"))
+root.bind("<Control-g>", lambda e: change_color("green"))
+root.bind("<Control-b>", lambda e: change_color("blue"))
+root.bind("<Control-1>", lambda e: change_size("500x500"))
+root.bind("<Control-2>", lambda e: change_size("700x400"))
+
+root.mainloop()
+```
+
+### Контрольные вопросы (краткие ответы)
+
+**8.1 Что такое «виджет»?**  
+Виджет — это любой элемент графического интерфейса (кнопка, поле ввода, метка, флажок, меню и т.д.).
+
+**8.2 Что содержит библиотека Tkinter?**  
+Tkinter содержит классы и функции для создания окон, виджетов (Button, Label, Entry, Text, Checkbutton, Radiobutton, Listbox, Combobox, Menu, Canvas и др.), работы с переменными (`StringVar`, `IntVar`, `BooleanVar`, `DoubleVar`), геометрических менеджеров (`pack`, `grid`, `place`) и событий.
+
+Если нужно:
+- Добавить оформление красивее (ttk.Style)
+- Сделать всё в одном файле
+- Добавить валидацию пароля и т.д.
+
+— напиши, сразу доработаю. Удачи на защите лабораторной! 🚀
