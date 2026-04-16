@@ -67,3 +67,89 @@ while True:
             break
         print(datetime.strftime(datetime.now(), "%Y.%m.%d %H:%M:%S"), f"{login}:", msg)
     conn.close()
+
+
+
+
+
+
+
+
+import socket
+import tkinter as tk
+from tkinter import messagebox
+
+# ====================== НАСТРОЙКИ ======================
+HOST = 'localhost'
+PORT = 50007
+
+# Создаём сокет и подключаемся
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+try:
+    s.connect((HOST, PORT))
+except:
+    messagebox.showerror("Ошибка", "Не удалось подключиться к серверу!")
+    exit()
+
+# ====================== ОКНО ======================
+root = tk.Tk()
+root.title("Чат - Оконный клиент")
+root.geometry("500x400")
+
+# Поле для логина (один раз при запуске)
+tk.Label(root, text="Твой логин:", font=("Arial", 10)).pack(pady=5)
+login_entry = tk.Entry(root, width=30, font=("Arial", 12))
+login_entry.pack(pady=5)
+
+# Отправляем логин на сервер сразу после ввода
+def send_login():
+    login = login_entry.get().strip()
+    if not login:
+        messagebox.showwarning("Ошибка", "Введите логин!")
+        return
+    try:
+        s.sendall(login.encode('utf-8'))
+        login_entry.config(state='disabled')   # блокируем поле логина
+        login_button.config(state='disabled')
+        status_label.config(text=f"Подключён как: {login}", fg="green")
+    except:
+        messagebox.showerror("Ошибка", "Не удалось отправить логин")
+
+login_button = tk.Button(root, text="Подключиться с этим логином", command=send_login, bg="#4CAF50", fg="white")
+login_button.pack(pady=10)
+
+# Поле для ввода сообщения
+tk.Label(root, text="Сообщение:", font=("Arial", 10)).pack(pady=5)
+message_entry = tk.Entry(root, width=50, font=("Arial", 12))
+message_entry.pack(pady=5)
+
+# Кнопка Отправить
+def send_message():
+    message = message_entry.get().strip()
+    if not message:
+        return
+    try:
+        s.sendall(message.encode('utf-8'))
+        message_entry.delete(0, tk.END)        # очищаем поле
+    except:
+        messagebox.showerror("Ошибка", "Соединение потеряно!")
+        root.quit()
+
+send_button = tk.Button(root, text="Отправить", command=send_message, bg="#2196F3", fg="white", font=("Arial", 10, "bold"))
+send_button.pack(pady=10)
+
+# Статус
+status_label = tk.Label(root, text="Ожидание логина...", fg="gray")
+status_label.pack(pady=5)
+
+# Закрытие окна
+def on_closing():
+    try:
+        s.close()
+    except:
+        pass
+    root.destroy()
+
+root.protocol("WM_DELETE_WINDOW", on_closing)
+
+root.mainloop()
