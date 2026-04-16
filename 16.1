@@ -1,0 +1,28 @@
+import socket
+from datetime import datetime
+
+HOST = ''
+PORT = 50007
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+s.listen(1)
+
+while True:
+    conn, addr = s.accept()
+    
+    # Сначала получаем логин
+    login_data = conn.recv(1024)
+    if login_data:
+        login = login_data.decode('utf-8').strip()
+        print(f"{login} подключился")
+    
+    # Теперь в цикле принимаем сообщения
+    while True:
+        data = conn.recv(1024)
+        if not data:
+            break
+        time_str = datetime.strftime(datetime.now(), "%Y.%m.%d %H:%M:%S")
+        print(f"{time_str} {data.decode('utf-8')}")
+    
+    conn.close()
