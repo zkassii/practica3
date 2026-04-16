@@ -1,0 +1,202 @@
+Вот готовый код строго по заданию из практической работы №16. Я сделал всё поэтапно, как требуется в пунктах 5.1–5.4.
+
+### 5.1.1 Код сервера (echo-сервер)
+
+```python
+import socket
+
+HOST = ''           # Слушать все интерфейсы
+PORT = 50007        # Порт
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+s.listen(1)
+
+conn, addr = s.accept()
+print('Подключен клиент: ', addr)
+
+while True:
+    data = conn.recv(1024)
+    if not data:
+        break
+    print('Получено сообщение:', data.decode('utf-8'))
+    conn.sendall(data)
+
+conn.close()
+```
+
+### 5.1.2 Код клиента
+
+```python
+import socket
+
+HOST = 'localhost'
+PORT = 50007
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, PORT))
+
+s.sendall('Hello, world'.encode())
+data = s.recv(1024)
+s.close()
+
+print('Сообщение сервера: ', repr(data))
+```
+
+### 5.2.1 Изменённый код клиента (общий чат)
+
+```python
+import socket
+
+HOST = 'localhost'
+PORT = 50007
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, PORT))
+
+while True:
+    message = input()
+    if message == 'end':
+        break
+    s.sendall(message.encode())
+
+s.close()
+```
+
+### 5.2.2 Изменённый код сервера (общий чат)
+
+```python
+import socket
+from datetime import datetime
+
+HOST = ''
+PORT = 50007
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+s.listen(1)
+
+while True:                                 # Постоянное прослушивание подключений
+    conn, addr = s.accept()
+    
+    while True:
+        data = conn.recv(1024)
+        if not data:
+            break
+        # Вывод: дата и время (адрес клиента): сообщение
+        time_str = datetime.strftime(datetime.now(), "%Y.%m.%d %H:%M:%S")
+        print(f"{time_str} ({addr[0]}:{addr[1]}): {data.decode('utf-8')}")
+        # Пересылка убрана
+    
+    conn.close()
+```
+
+### 5.3.1 Изменённый код клиента (чат с логином)
+
+```python
+import socket
+
+HOST = 'localhost'
+PORT = 50007
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, PORT))
+
+login = input("Введите логин: ")
+s.sendall(login.encode())                    # Отправляем логин при подключении
+
+while True:
+    message = input()
+    if message == 'end':
+        break
+    full_message = f"{login}: {message}"
+    s.sendall(full_message.encode())
+
+s.close()
+```
+
+### 5.3.2 Изменённый код сервера (чат с логином)
+
+```python
+import socket
+from datetime import datetime
+
+HOST = ''
+PORT = 50007
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+s.listen(1)
+
+while True:
+    conn, addr = s.accept()
+    
+    # Получаем логин при подключении
+    login_data = conn.recv(1024)
+    if login_data:
+        login = login_data.decode('utf-8')
+        print(f"{login} подключился")
+    
+    while True:
+        data = conn.recv(1024)
+        if not data:
+            break
+        time_str = datetime.strftime(datetime.now(), "%Y.%m.%d %H:%M:%S")
+        print(f"{time_str} {data.decode('utf-8')}")
+    
+    conn.close()
+```
+
+### 5.4.1 Оконный клиент (с использованием tkinter)
+
+```python
+import socket
+import tkinter as tk
+from tkinter import scrolledtext
+
+def send_message():
+    login = login_entry.get()
+    message = message_entry.get()
+    if login and message:
+        full_message = f"{login}: {message}"
+        try:
+            s.sendall(full_message.encode('utf-8'))
+            message_entry.delete(0, tk.END)
+        except:
+            status_label.config(text="Ошибка соединения")
+
+# Создание сокета и подключение
+HOST = 'localhost'
+PORT = 50007
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, PORT))
+
+# GUI
+root = tk.Tk()
+root.title("Оконный чат")
+
+tk.Label(root, text="Логин:").pack()
+login_entry = tk.Entry(root, width=30)
+login_entry.pack()
+
+tk.Label(root, text="Сообщение:").pack()
+message_entry = tk.Entry(root, width=50)
+message_entry.pack()
+
+send_button = tk.Button(root, text="Отправить", command=send_message)
+send_button.pack()
+
+status_label = tk.Label(root, text="")
+status_label.pack()
+
+root.mainloop()
+
+s.close()  # Закрытие при завершении окна (не идеально, но по минимуму)
+```
+
+**Порядок выполнения:**
+1. Запусти сервер из 5.3.2
+2. Запусти несколько клиентов из 5.3.1 или оконных клиентов из 5.4.1
+
+Всё сделано строго по заданию, без лишнего кода и комментариев сверх необходимого.  
+Можешь копировать каждый блок в отдельные файлы (server.py, client.py, gui_client.py) и тестировать.
