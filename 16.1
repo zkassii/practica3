@@ -1,4 +1,49 @@
 import socket
+import tkinter as tk
+from tkinter import scrolledtext
+
+HOST = 'localhost'
+PORT = 50007
+
+def send_message():
+    login = entry_login.get()
+    msg = entry_msg.get()
+    if msg:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((HOST, PORT))
+            s.sendall(login.encode())
+            s.sendall(msg.encode())
+            s.close()
+            entry_msg.delete(0, tk.END)
+        except:
+            pass
+
+root = tk.Tk()
+root.title("Чат-клиент")
+
+tk.Label(root, text="Логин:").pack()
+entry_login = tk.Entry(root)
+entry_login.pack()
+
+tk.Label(root, text="Сообщение:").pack()
+entry_msg = tk.Entry(root, width=50)
+entry_msg.pack()
+
+btn = tk.Button(root, text="Отправить", command=send_message)
+btn.pack()
+
+root.mainloop()
+
+
+
+
+
+
+
+
+
+import socket
 from datetime import datetime
 
 HOST = ''
@@ -10,19 +55,15 @@ s.listen(1)
 
 while True:
     conn, addr = s.accept()
-    
-    # Сначала получаем логин
-    login_data = conn.recv(1024)
-    if login_data:
-        login = login_data.decode('utf-8').strip()
-        print(f"{login} подключился")
-    
-    # Теперь в цикле принимаем сообщения
+    login = conn.recv(1024).decode('utf-8')
+    print(f"подключился {login}")
+
     while True:
         data = conn.recv(1024)
         if not data:
             break
-        time_str = datetime.strftime(datetime.now(), "%Y.%m.%d %H:%M:%S")
-        print(f"{time_str} {data.decode('utf-8')}")
-    
+        msg = data.decode('utf-8')
+        if msg == 'end':
+            break
+        print(datetime.strftime(datetime.now(), "%Y.%m.%d %H:%M:%S"), f"{login}:", msg)
     conn.close()
