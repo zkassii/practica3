@@ -1,0 +1,214 @@
+**✅ Всё сделаю и распишу максимально подробно, поэтапно.**
+
+### Задание (что нужно сделать):
+
+**5.1** — Написать модуль на **C#** с методами работы с файловой системой (создание, чтение, удаление, изменение файлов), подключить его к **Python** и протестировать.
+
+**5.2** — Подключить к программе на **C#** внешний скрипт на **IronPython** и выполнить обработку списка чисел (как в примере из методички).
+
+---
+
+## Этап 1: Подготовка окружения
+
+1. Установи **Visual Studio 2022** (Community подойдёт).
+2. Установи **Python 3.8–3.11** (лучше 3.10 или 3.11).
+3. Установи **IronPython** (самый важный момент):
+
+   - Скачай последнюю версию IronPython с [github.com/IronLanguages/ironpython3](https://github.com/IronLanguages/ironpython3/releases)
+   - Или проще — через NuGet в Visual Studio.
+
+---
+
+## Этап 2: Создаём C# библиотеку (DLL) для файловой системы (задание 5.1)
+
+### Шаг 2.1 — Создаём проект Class Library
+
+1. Открой Visual Studio → **Create a new project**
+2. Выбери **Class Library (.NET Framework)** или **.NET 6/8** (рекомендую .NET 6+)
+3. Назови проект, например: `FileSystemModule`
+
+### Шаг 2.2 — Пишем код на C#
+
+Замени содержимое `Class1.cs` на следующий код:
+
+```csharp
+using System;
+using System.IO;
+
+namespace FileSystemModule
+{
+    public class FileOperations
+    {
+        // Создание файла
+        public void CreateFile(string path, string content)
+        {
+            File.WriteAllText(path, content);
+            Console.WriteLine($"Файл создан: {path}");
+        }
+
+        // Чтение файла
+        public string ReadFile(string path)
+        {
+            if (File.Exists(path))
+            {
+                string content = File.ReadAllText(path);
+                Console.WriteLine($"Файл прочитан: {path}");
+                return content;
+            }
+            return "Файл не существует";
+        }
+
+        // Удаление файла
+        public void DeleteFile(string path)
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+                Console.WriteLine($"Файл удалён: {path}");
+            }
+        }
+
+        // Изменение (добавление текста в конец)
+        public void AppendToFile(string path, string content)
+        {
+            File.AppendAllText(path, content);
+            Console.WriteLine($"Текст добавлен в файл: {path}");
+        }
+
+        // Получить список файлов в папке
+        public string[] ListFiles(string directory)
+        {
+            if (Directory.Exists(directory))
+            {
+                return Directory.GetFiles(directory);
+            }
+            return new string[0];
+        }
+    }
+}
+```
+
+**Собери проект** (Build → Build Solution).  
+Найди файл `FileSystemModule.dll` в папке `bin\Debug\net6.0` (или net8.0).
+
+---
+
+## Этап 3: Подключаем C# DLL к Python (IronPython)
+
+### Шаг 3.1 — Устанавливаем IronPython и clr
+
+Открой **Python IDLE** или терминал и выполни:
+
+```bash
+pip install pythonnet
+```
+
+### Шаг 3.2 — Python скрипт для тестирования (файл `test_files.py`)
+
+```python
+import clr
+import sys
+
+# Добавляем путь к твоей DLL
+sys.path.append(r'C:\Path\To\Your\FileSystemModule.dll')  # ← ИЗМЕНИ ПУТЬ!
+
+clr.AddReference("FileSystemModule")
+
+from FileSystemModule import FileOperations
+
+fs = FileOperations()
+
+# Тестируем
+fs.CreateFile("test.txt", "Привет из Python + C#!\n")
+print("Содержимое:", fs.ReadFile("test.txt"))
+
+fs.AppendToFile("test.txt", "Ещё одна строка.\n")
+print("После добавления:", fs.ReadFile("test.txt"))
+
+fs.DeleteFile("test.txt")
+print("Файл удалён")
+```
+
+Запусти этот скрипт — всё должно работать.
+
+---
+
+## Этап 4: Задание 5.2 — C# + IronPython скрипт
+
+### Шаг 4.1 — Создаём консольное приложение C#
+
+Новый проект → **Console App (.NET 6/8)**, назови `CSharpIronPython`
+
+### Шаг 4.2 — Добавляем IronPython через NuGet
+
+Правой кнопкой по проекту → **Manage NuGet Packages** → установи:
+- `IronPython`
+
+### Шаг 4.3 — Python скрипт (создай файл `process_numbers.py`)
+
+```python
+# process_numbers.py
+def process_numbers(numbers):
+    squared = [x * x for x in numbers]
+    total = sum(numbers)
+    count = len(numbers)
+    
+    return {
+        "squared": squared,
+        "sum": total,
+        "count": count
+    }
+```
+
+### Шаг 4.4 — Код на C# (Program.cs)
+
+```csharp
+using IronPython.Hosting;
+using Microsoft.Scripting.Hosting;
+using System;
+using System.Collections.Generic;
+
+namespace CSharpIronPython
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            var engine = Python.CreateEngine();
+            var scope = engine.CreateScope();
+
+            // Загружаем Python скрипт
+            engine.ExecuteFile(@"C:\Path\To\process_numbers.py", scope);  // ← ИЗМЕНИ ПУТЬ!
+
+            dynamic processNumbers = scope.GetVariable("process_numbers");
+
+            List<int> numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+            var result = processNumbers(numbers);
+
+            Console.WriteLine("Результат обработки:");
+            Console.WriteLine("Квадраты: " + string.Join(", ", result["squared"]));
+            Console.WriteLine("Сумма: " + result["sum"]);
+            Console.WriteLine("Количество: " + result["count"]);
+        }
+    }
+}
+```
+
+Запусти проект — должен вывести обработку списка чисел.
+
+---
+
+## Что сдать преподавателю:
+
+1. Код C# библиотеки `FileSystemModule`
+2. Python-скрипт, подключающий эту библиотеку
+3. Консольное приложение C# + Python-скрипт `process_numbers.py`
+4. Скриншоты работающих программ
+
+---
+
+Хочешь, я сейчас сделаю **готовый архив** с правильной структурой папок и всеми файлами?  
+Или нужно что-то поправить/упростить (например, использовать .NET Framework вместо .NET 6)? 
+
+Напиши: «Сделай архив» или «Покажи как упростить».
