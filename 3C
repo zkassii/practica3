@@ -1,88 +1,48 @@
-**✅ Понял. У тебя C# 12 + CommunityToolkit.Mvvm, поэтому сделаем чисто и правильно.**
-
-Ошибка с `Current` возникает потому, что его ещё нет в `MainViewModel`. Давай исправим это грамотно.
-
-### Правильная версия для C# 12 + CommunityToolkit
-
-#### 1. MainViewModel.cs (обнови полностью)
-
-```csharp
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Collections.Generic;
+
+namespace AvaloniaApp.ViewModels;   // ← Замени AvaloniaApp на имя своего проекта
 
 public partial class MainViewModel : ViewModelBase
 {
-    // Статический доступ к текущему экземпляру MainViewModel
     public static MainViewModel Instance { get; private set; } = null!;
 
     [ObservableProperty]
     private ViewModelBase? currentPage;
 
+    private readonly Stack<ViewModelBase> _history = new();
+
     public MainViewModel()
     {
-        Instance = this;   // ← Вот ключевой момент
+        Instance = this;
+        CurrentPage = new AuthorizationViewModel();
+    }
+
+    [RelayCommand]
+    public void NavigateToRegistration()
+    {
+        if (CurrentPage != null)
+            _history.Push(CurrentPage);
+
+        CurrentPage = new RegistrationViewModel();
+    }
+
+    [RelayCommand]
+    public void NavigateToAuthorization()
+    {
+        if (CurrentPage != null)
+            _history.Push(CurrentPage);
 
         CurrentPage = new AuthorizationViewModel();
     }
 
-    // Простые команды навигации
-    public void NavigateToRegistration() => CurrentPage = new RegistrationViewModel();
-    public void NavigateToAuthorization() => CurrentPage = new AuthorizationViewModel();
-
+    [RelayCommand]
     public void GoBack()
     {
-        // Пока простой back, позже можно улучшить через NavigationService
-        // CurrentPage = предыдущая страница
-    }
-}
-```
-
-#### 2. NavigationService.cs (рекомендуемая версия)
-
-```csharp
-public class NavigationService
-{
-    public static NavigationService Instance { get; } = new();
-
-    private readonly Stack<ViewModelBase> _navigationStack = new();
-
-    public void NavigateTo<T>(T viewModel) where T : ViewModelBase
-    {
-        if (MainViewModel.Instance.CurrentPage != null)
+        if (_history.Count > 0)
         {
-            _navigationStack.Push(MainViewModel.Instance.CurrentPage);
-        }
-
-        MainViewModel.Instance.CurrentPage = viewModel;
-    }
-
-    public void GoBack(int steps = 1)
-    {
-        for (int i = 0; i < steps && _navigationStack.Count > 0; i++)
-        {
-            MainViewModel.Instance.CurrentPage = _navigationStack.Pop();
+            CurrentPage = _history.Pop();
         }
     }
 }
-```
-
----
-
-### Что нужно проверить:
-
-1. Убедись, что в `MainViewModel` есть строка:
-   ```csharp
-   public static MainViewModel Instance { get; private set; } = null!;
-   ```
-   и в конструкторе `Instance = this;`
-
-2. В `NavigationService` используй `MainViewModel.Instance.CurrentPage`, а не `MainViewModel.Current`
-
-3. Пересобери решение полностью: **Build → Rebuild Solution**
-
----
-
-Хочешь, я сделаю **ещё более чистую версию** без статического `Instance`, используя Dependency Injection (это современный подход для Avalonia + CommunityToolkit)?
-
-Или оставляем этот вариант — он проще для лабораторной.
-
-Напиши, если после этих изменений ошибка всё ещё остаётся — пришли **точный текст ошибки** из Error List.
