@@ -1,260 +1,88 @@
+**✅ Понял. У тебя C# 12 + CommunityToolkit.Mvvm, поэтому сделаем чисто и правильно.**
 
-public class NavigationService
-{
-    public static NavigationService Instance { get; } = new NavigationService();
+Ошибка с `Current` возникает потому, что его ещё нет в `MainViewModel`. Давай исправим это грамотно.
 
-    private readonly Stack<ViewModelBase> _stack = new();
+### Правильная версия для C# 12 + CommunityToolkit
 
-    public ViewModelBase? CurrentPage { get; private set; }
-
-    public void NavigateTo<T>(T viewModel) where T : ViewModelBase
-    {
-        if (CurrentPage != null)
-            _stack.Push(CurrentPage);
-
-        CurrentPage = viewModel;
-
-        // Обновляем MainViewModel
-        if (MainViewModel.Current != null)
-            MainViewModel.Current.CurrentPage = viewModel;
-    }
-
-    public void GoBack()
-    {
-        if (_stack.Count > 0)
-        {
-            var previous = _stack.Pop();
-            if (MainViewModel.Current != null)
-                MainViewModel.Current.CurrentPage = previous;
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-**Готово!** Я сделал для тебя полную реализацию лабораторной по Avalonia UI согласно твоему заданию.
-
-### 1. ViewLocator (уже дан в задании, но для полноты)
+#### 1. MainViewModel.cs (обнови полностью)
 
 ```csharp
-public class ViewLocator : IDataTemplate
-{
-    public bool SupportsRecycling => false;
+using CommunityToolkit.Mvvm.ComponentModel;
 
-    public Control Build(object? data)
-    {
-        if (data is null) return new TextBlock { Text = "Data is null" };
-
-        var name = data.GetType().FullName!
-            .Replace("ViewModel", "View");
-
-        var type = Type.GetType(name);
-        if (type != null)
-        {
-            return (Control)Activator.CreateInstance(type)!;
-        }
-
-        return new TextBlock { Text = "Not Found: " + name };
-    }
-
-    public bool Match(object? data)
-    {
-        return data is ViewModelBase;
-    }
-}
-```
-
-### 2. App.axaml (5.1.2)
-
-```xml
-<Application xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="using:ТвоёИмяПроекта"  <!-- ← Замени на имя твоего проекта -->
-             x:Class="ТвоёИмяПроекта.App">
-
-    <Application.DataTemplates>
-        <local:ViewLocator/>
-    </Application.DataTemplates>
-
-    <Application.Styles>
-        <FluentTheme Mode="Light"/>
-    </Application.Styles>
-</Application>
-```
-
-### 3. ViewModelBase.cs
-
-```csharp
-public abstract class ViewModelBase : ObservableObject
-{
-}
-```
-
-### 4. MainViewModel.cs
-
-```csharp
 public partial class MainViewModel : ViewModelBase
 {
+    // Статический доступ к текущему экземпляру MainViewModel
+    public static MainViewModel Instance { get; private set; } = null!;
+
     [ObservableProperty]
     private ViewModelBase? currentPage;
 
     public MainViewModel()
     {
-        // По умолчанию открываем страницу авторизации
+        Instance = this;   // ← Вот ключевой момент
+
         CurrentPage = new AuthorizationViewModel();
     }
 
+    // Простые команды навигации
     public void NavigateToRegistration() => CurrentPage = new RegistrationViewModel();
     public void NavigateToAuthorization() => CurrentPage = new AuthorizationViewModel();
+
+    public void GoBack()
+    {
+        // Пока простой back, позже можно улучшить через NavigationService
+        // CurrentPage = предыдущая страница
+    }
 }
 ```
 
-### 5. RegistrationViewModel.cs + RegistrationView.axaml
-
-**RegistrationViewModel.cs**
-```csharp
-public partial class RegistrationViewModel : ViewModelBase
-{
-    [ObservableProperty]
-    private string login = "";
-
-    [ObservableProperty]
-    private string password = "";
-}
-```
-
-**RegistrationView.axaml**
-```xml
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="300"
-             x:Class="ТвоёИмяПроекта.Views.RegistrationView">
-
-    <StackPanel Spacing="20" Margin="30" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <TextBlock Text="Регистрация" FontSize="24" FontWeight="Bold"/>
-        
-        <TextBox Text="{Binding Login}" Watermark="Логин" Width="300"/>
-        <TextBox Text="{Binding Password}" Watermark="Пароль" PasswordChar="*" Width="300"/>
-        
-        <Button Content="Зарегистрироваться" HorizontalAlignment="Center" Width="200"/>
-        <Button Content="← Назад к авторизации" HorizontalAlignment="Center"
-                Command="{Binding DataContext.NavigateToAuthorization, RelativeSource={RelativeSource AncestorType=Window}}"/>
-    </StackPanel>
-</UserControl>
-```
-
-### 6. AuthorizationViewModel.cs + AuthorizationView.axaml
-
-**AuthorizationViewModel.cs**
-```csharp
-public partial class AuthorizationViewModel : ViewModelBase
-{
-    [ObservableProperty]
-    private string login = "";
-
-    [ObservableProperty]
-    private string password = "";
-}
-```
-
-**AuthorizationView.axaml**
-```xml
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="ТвоёИмяПроекта.Views.AuthorizationView">
-
-    <StackPanel Spacing="20" Margin="30" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <TextBlock Text="Авторизация" FontSize="24" FontWeight="Bold"/>
-        
-        <TextBox Text="{Binding Login}" Watermark="Логин" Width="300"/>
-        <TextBox Text="{Binding Password}" Watermark="Пароль" PasswordChar="*" Width="300"/>
-        
-        <Button Content="Войти" HorizontalAlignment="Center" Width="200"/>
-        <Button Content="Перейти к регистрации →" HorizontalAlignment="Center"
-                Command="{Binding DataContext.NavigateToRegistration, RelativeSource={RelativeSource AncestorType=Window}}"/>
-    </StackPanel>
-</UserControl>
-```
-
-### 7. NavigationService (5.3)
+#### 2. NavigationService.cs (рекомендуемая версия)
 
 ```csharp
 public class NavigationService
 {
+    public static NavigationService Instance { get; } = new();
+
     private readonly Stack<ViewModelBase> _navigationStack = new();
 
-    public void NavigateTo<T>(T viewModel, Action<T>? action = null) where T : ViewModelBase
+    public void NavigateTo<T>(T viewModel) where T : ViewModelBase
     {
-        if (MainViewModel.Current != null)
+        if (MainViewModel.Instance.CurrentPage != null)
         {
-            _navigationStack.Push(MainViewModel.Current);
-            MainViewModel.Current = viewModel;
+            _navigationStack.Push(MainViewModel.Instance.CurrentPage);
         }
 
-        action?.Invoke(viewModel);
+        MainViewModel.Instance.CurrentPage = viewModel;
     }
 
     public void GoBack(int steps = 1)
     {
-        if (_navigationStack.Count == 0) return;
-
         for (int i = 0; i < steps && _navigationStack.Count > 0; i++)
         {
-            MainViewModel.Current = _navigationStack.Pop();
+            MainViewModel.Instance.CurrentPage = _navigationStack.Pop();
         }
-    }
-}
-```
-
-### 8. MainWindow.axaml
-
-```xml
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:ТвоёИмяПроекта.ViewModels"
-        Title="Avalonia Navigation"
-        Width="800" Height="500"
-        x:Class="ТвоёИмяПроекта.Views.MainWindow">
-
-    <DockPanel>
-        <!-- Кнопки навигации -->
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="10">
-            <Button Content="Авторизация" Command="{Binding NavigateToAuthorization}"/>
-            <Button Content="Регистрация" Command="{Binding NavigateToRegistration}"/>
-            <Button Content="← Назад" Command="{Binding GoBackCommand}"/>
-        </StackPanel>
-
-        <!-- Контент -->
-        <ContentControl Content="{Binding CurrentPage}" Margin="10"/>
-    </DockPanel>
-</Window>
-```
-
-### 9. MainWindow.axaml.cs
-
-```csharp
-public partial class MainWindow : Window
-{
-    public MainWindow()
-    {
-        InitializeComponent();
-        DataContext = new MainViewModel();
     }
 }
 ```
 
 ---
 
-Хочешь, я сейчас сделаю **версию с полноценным `NavigationService` как singleton** и инъекцией в `MainViewModel` (более правильный подход), или оставляем как есть?
+### Что нужно проверить:
 
-Также могу добавить передачу данных между страницами через `Action<T>` или `INavigationAware` интерфейс.
+1. Убедись, что в `MainViewModel` есть строка:
+   ```csharp
+   public static MainViewModel Instance { get; private set; } = null!;
+   ```
+   и в конструкторе `Instance = this;`
 
-Напиши, что нужно доработать или улучшить.
+2. В `NavigationService` используй `MainViewModel.Instance.CurrentPage`, а не `MainViewModel.Current`
+
+3. Пересобери решение полностью: **Build → Rebuild Solution**
+
+---
+
+Хочешь, я сделаю **ещё более чистую версию** без статического `Instance`, используя Dependency Injection (это современный подход для Avalonia + CommunityToolkit)?
+
+Или оставляем этот вариант — он проще для лабораторной.
+
+Напиши, если после этих изменений ошибка всё ещё остаётся — пришли **точный текст ошибки** из Error List.
