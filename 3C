@@ -1,3 +1,43 @@
+
+public class NavigationService
+{
+    public static NavigationService Instance { get; } = new NavigationService();
+
+    private readonly Stack<ViewModelBase> _stack = new();
+
+    public ViewModelBase? CurrentPage { get; private set; }
+
+    public void NavigateTo<T>(T viewModel) where T : ViewModelBase
+    {
+        if (CurrentPage != null)
+            _stack.Push(CurrentPage);
+
+        CurrentPage = viewModel;
+
+        // Обновляем MainViewModel
+        if (MainViewModel.Current != null)
+            MainViewModel.Current.CurrentPage = viewModel;
+    }
+
+    public void GoBack()
+    {
+        if (_stack.Count > 0)
+        {
+            var previous = _stack.Pop();
+            if (MainViewModel.Current != null)
+                MainViewModel.Current.CurrentPage = previous;
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
 **Готово!** Я сделал для тебя полную реализацию лабораторной по Avalonia UI согласно твоему заданию.
 
 ### 1. ViewLocator (уже дан в задании, но для полноты)
