@@ -1,0 +1,167 @@
+**✅ Всё сделано.**  
+Везде заменено `Credentials` → `Creditionals`.
+
+Вот полный комплект файлов:
+
+---
+
+### 1. UserCreditionals.cs
+
+```csharp
+using CommunityToolkit.Mvvm.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+
+namespace YourApp.Models;
+
+public partial class UserCreditionals : ObservableValidator
+{
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Required(ErrorMessage = "Логин обязателен")]
+    [RegularExpression(@"^[a-zA-Z0-9_]{3,20}$", 
+        ErrorMessage = "Логин может содержать только латинские буквы, цифры и нижнее подчёркивание. Длина 3-20 символов.")]
+    private string? login;
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Required(ErrorMessage = "Пароль обязателен")]
+    [MinLength(8, ErrorMessage = "Пароль должен быть не менее 8 символов")]
+    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,20}$",
+        ErrorMessage = "Пароль должен содержать латинские буквы верхнего и нижнего регистра, цифры и спецсимволы. Длина 8-20 символов.")]
+    private string? password;
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Required(ErrorMessage = "Подтверждение пароля обязательно")]
+    [Compare(nameof(Password), ErrorMessage = "Пароли не совпадают")]
+    private string? confirmPassword;
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Required(ErrorMessage = "Email обязателен")]
+    [EmailAddress(ErrorMessage = "Введите корректный email")]
+    private string? email;
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [Required(ErrorMessage = "Номер телефона обязателен")]
+    [Phone(ErrorMessage = "Введите корректный номер телефона")]
+    private string? phone;
+}
+```
+
+---
+
+### 2. RegistrationViewModel.cs
+
+```csharp
+using CommunityToolkit.Mvvm.ComponentModel;
+using YourApp.Models;
+
+namespace YourApp.ViewModels;
+
+public partial class RegistrationViewModel : ViewModelBase
+{
+    [ObservableProperty]
+    private UserCreditionals _creditionals = new();
+}
+```
+
+---
+
+### 3. RegistrationView.axaml
+
+```xml
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:YourApp.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="420" d:DesignHeight="550"
+             x:Class="YourApp.Views.RegistrationView">
+
+    <Design.DataContext>
+        <vm:RegistrationViewModel/>
+    </Design.DataContext>
+
+    <StackPanel Spacing="16" Margin="40" Width="360">
+        <TextBlock Text="Регистрация" 
+                   FontSize="28" 
+                   FontWeight="Bold" 
+                   HorizontalAlignment="Center"
+                   Margin="0 0 0 30"/>
+
+        <TextBox Text="{Binding Creditionals.Login, Mode=TwoWay, ValidatesOnDataErrors=True}"
+                 Watermark="Логин" />
+
+        <TextBox Text="{Binding Creditionals.Password, Mode=TwoWay, ValidatesOnDataErrors=True}"
+                 Watermark="Пароль" PasswordChar="●" />
+
+        <TextBox Text="{Binding Creditionals.ConfirmPassword, Mode=TwoWay, ValidatesOnDataErrors=True}"
+                 Watermark="Подтверждение пароля" PasswordChar="●" />
+
+        <TextBox Text="{Binding Creditionals.Email, Mode=TwoWay, ValidatesOnDataErrors=True}"
+                 Watermark="Email" />
+
+        <TextBox Text="{Binding Creditionals.Phone, Mode=TwoWay, ValidatesOnDataErrors=True}"
+                 Watermark="Номер телефона" />
+
+        <Button Content="Зарегистрироваться" 
+                HorizontalAlignment="Center"
+                Width="220" 
+                Height="45"
+                Margin="0 20 0 0"
+                Command="{Binding Creditionals.ValidateAllPropertiesCommand}"/>
+    </StackPanel>
+</UserControl>
+```
+
+---
+
+### 4. RegistrationView.axaml.cs
+
+```csharp
+using Avalonia.Controls;
+using Avalonia.Markup.Xaml;
+
+namespace YourApp.Views;
+
+public partial class RegistrationView : UserControl
+{
+    public RegistrationView()
+    {
+        InitializeComponent();
+    }
+
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
+    }
+}
+```
+
+---
+
+### Как добавить на главную страницу (MainWindow.axaml):
+
+```xml
+<Window ... >
+    <views:RegistrationView />
+</Window>
+```
+
+И в `MainWindow.axaml.cs`:
+
+```csharp
+public MainWindow()
+{
+    InitializeComponent();
+    DataContext = new RegistrationViewModel();
+}
+```
+
+---
+
+Готово. Всё переименовано строго на `Creditionals`.
+
+Если нужно — могу сделать ещё и `InverseBooleanConverter` + красивое отображение ошибок. Скажи.
