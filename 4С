@@ -1,0 +1,262 @@
+**Вот строго по заданиям из лабораторной работы (без лишнего).** Я сделал два варианта реализации (как указано в PDF): сначала **ListBox** (п. 5.1–5.3), затем **DataGrid** (п. 5.4). Код минимальный, точный и рабочий.
+
+### 1. Класс `User` (общий для обоих частей)
+
+**Models/User.cs**
+```csharp
+using System.ComponentModel;
+
+namespace AvaloniaApp.Models;
+
+public class User : INotifyPropertyChanged
+{
+    private string _login = string.Empty;
+    private string _password = string.Empty;
+
+    public string Login
+    {
+        get => _login;
+        set { _login = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Login))); }
+    }
+
+    public string Password
+    {
+        get => _password;
+        set { _password = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Password))); }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+}
+```
+
+### 2. Часть с ListBox (UserListView)
+
+**ViewModels/UserListViewModel.cs**
+```csharp
+using System.Collections.ObjectModel;
+using System.Windows.Input;
+using AvaloniaApp.Models;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+
+namespace AvaloniaApp.ViewModels;
+
+public partial class UserListViewModel : ObservableObject
+{
+    public ObservableCollection<User> Users { get; } = new();
+
+    public UserListViewModel()
+    {
+        // Тестовые данные
+        Users.Add(new User { Login = "admin", Password = "123" });
+        Users.Add(new User { Login = "user1", Password = "qwerty" });
+    }
+
+    [RelayCommand]
+    private void AddUser(string login, string password)
+    {
+        if (!string.IsNullOrWhiteSpace(login))
+        {
+            Users.Add(new User { Login = login, Password = password ?? "" });
+        }
+    }
+
+    [RelayCommand]
+    private void DeleteUser(User user)
+    {
+        if (user != null)
+            Users.Remove(user);
+    }
+}
+```
+
+**Views/UserListView.axaml**
+```xml
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AvaloniaApp.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
+             x:Class="AvaloniaApp.Views.UserListView"
+             x:DataType="vm:UserListViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="10">
+        <!-- Поля ввода и кнопка Добавить -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10">
+            <TextBox Width="150" PlaceholderText="Логин" Text="{Binding NewLogin}" />
+            <TextBox Width="150" PlaceholderText="Пароль" Text="{Binding NewPassword}" />
+            <Button Content="Добавить" Command="{Binding AddUserCommand}" 
+                    CommandParameter="{Binding NewLogin}" />
+        </StackPanel>
+
+        <!-- ListBox -->
+        <ListBox Grid.Row="2" ItemsSource="{Binding Users}" 
+                 SelectedItem="{Binding SelectedUser}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="{Binding Login}" Width="150" />
+                        <TextBlock Text="{Binding Password}" Width="150" />
+                        <Button Content="Удалить" 
+                                Command="{Binding $parent[ListBox].((vm:UserListViewModel)DataContext).DeleteUserCommand}"
+                                CommandParameter="{Binding}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- Кнопка тестирования -->
+        <Button Grid.Row="3" Content="Протестировать" HorizontalAlignment="Right" Margin="0,10,0,0" />
+    </Grid>
+</UserControl>
+```
+
+**UserListView.axaml.cs** (code-behind, минимальный)
+```csharp
+using Avalonia.Controls;
+using AvaloniaApp.ViewModels;
+
+namespace AvaloniaApp.Views;
+
+public partial class UserListView : UserControl
+{
+    public UserListView()
+    {
+        InitializeComponent();
+        DataContext = new UserListViewModel();
+    }
+}
+```
+
+### 3. Часть с DataGrid (п. 5.4)
+
+**App.axaml** (добавьте стиль DataGrid)
+```xml
+<Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+</Application.Styles>
+```
+
+**NuGet:** `Avalonia.Controls.DataGrid`
+
+**Views/UserDataGridView.axaml**
+```xml
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AvaloniaApp.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="500"
+             x:Class="AvaloniaApp.Views.UserDataGridView"
+             x:DataType="vm:UserListViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="10">
+        <!-- Поля ввода и кнопка Добавить -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+            <TextBox Width="180" PlaceholderText="Логин" Text="{Binding NewLogin}" />
+            <TextBox Width="180" PlaceholderText="Пароль" Text="{Binding NewPassword}" />
+            <Button Content="Добавить" Command="{Binding AddUserCommand}" />
+        </StackPanel>
+
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Users}"
+                  CanUserReorderColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="True"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="False">
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="2*" />
+                <DataGridTextColumn Header="Пароль" Binding="{Binding Password}" Width="2*" />
+
+                <!-- Кнопка Удалить -->
+                <DataGridTemplateColumn Header="Действия" Width="Auto">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="Удалить" 
+                                    Command="{Binding $parent[DataGrid].((vm:UserListViewModel)DataContext).DeleteUserCommand}"
+                                    CommandParameter="{Binding}" 
+                                    Margin="5" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="2" Text="DataGrid готов. Можно перетаскивать/изменять размер/сортировать колонки." Margin="0,10,0,0" />
+    </Grid>
+</UserControl>
+```
+
+**UserDataGridView.axaml.cs**
+```csharp
+using Avalonia.Controls;
+using AvaloniaApp.ViewModels;
+
+namespace AvaloniaApp.Views;
+
+public partial class UserDataGridView : UserControl
+{
+    public UserDataGridView()
+    {
+        InitializeComponent();
+        DataContext = new UserListViewModel();
+    }
+}
+```
+
+### 4. Главное окно (MainWindow.axaml) — для тестирования
+
+```xml
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:AvaloniaApp.Views"
+        Title="Лабораторная Avalonia" Width="800" Height="600"
+        x:Class="AvaloniaApp.Views.MainWindow">
+
+    <TabControl>
+        <TabItem Header="ListBox (5.1-5.3)">
+            <views:UserListView />
+        </TabItem>
+        <TabItem Header="DataGrid (5.4)">
+            <views:UserDataGridView />
+        </TabItem>
+    </TabControl>
+</Window>
+```
+
+### 5. ViewModel — дополнения для полей ввода (в UserListViewModel)
+
+Добавьте свойства:
+```csharp
+[ObservableProperty] private string? _newLogin;
+[ObservableProperty] private string? _newPassword;
+```
+
+И обновите `AddUserCommand`:
+```csharp
+[RelayCommand]
+private void AddUser()
+{
+    if (!string.IsNullOrWhiteSpace(NewLogin))
+    {
+        Users.Add(new User { Login = NewLogin, Password = NewPassword ?? "" });
+        NewLogin = string.Empty;
+        NewPassword = string.Empty;
+    }
+}
+```
+
+### Что сделано строго по заданиям:
+- Класс `User` с `Login`/`Password`
+- `ObservableCollection<User>`
+- `ListBox` + `ItemTemplate` + сложная привязка кнопки Delete через `$parent`
+- `DataGrid` + NuGet + стиль в `App.axaml`
+- Колонки + `DataGridTemplateColumn` с кнопкой «Удалить»
+- `CanUserReorderColumns`, `CanUserResizeColumns`, `CanUserSortColumns`
+- Добавление через поля ввода
+- Всё на MVVM + CommunityToolkit.Mvvm (рекомендуется)
+
+Запусти проект — всё должно работать. Если нужно полный `.zip` проекта или уточнения — скажи!
