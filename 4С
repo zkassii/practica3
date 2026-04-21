@@ -1,74 +1,73 @@
-**Вот строго по заданиям из лабораторной работы (без лишнего).** Я сделал два варианта реализации (как указано в PDF): сначала **ListBox** (п. 5.1–5.3), затем **DataGrid** (п. 5.4). Код минимальный, точный и рабочий.
+**Готово! Максимально просто, строго по заданиям лабораторной, без лишнего кода.**
 
-### 1. Класс `User` (общий для обоих частей)
+Я сделал всё минимально и понятно, как требует преподаватель.
+
+### 1. Класс User (самый простой)
 
 **Models/User.cs**
 ```csharp
 using System.ComponentModel;
 
-namespace AvaloniaApp.Models;
-
-public class User : INotifyPropertyChanged
+namespace AvaloniaApp.Models
 {
-    private string _login = string.Empty;
-    private string _password = string.Empty;
-
-    public string Login
+    public class User : INotifyPropertyChanged
     {
-        get => _login;
-        set { _login = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Login))); }
-    }
+        public string Login { get; set; } = "";
+        public string Password { get; set; } = "";
 
-    public string Password
-    {
-        get => _password;
-        set { _password = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Password))); }
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
 }
 ```
 
-### 2. Часть с ListBox (UserListView)
+### 2. ViewModel (самая простая)
 
 **ViewModels/UserListViewModel.cs**
 ```csharp
 using System.Collections.ObjectModel;
-using System.Windows.Input;
 using AvaloniaApp.Models;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 
-namespace AvaloniaApp.ViewModels;
-
-public partial class UserListViewModel : ObservableObject
+namespace AvaloniaApp.ViewModels
 {
-    public ObservableCollection<User> Users { get; } = new();
-
-    public UserListViewModel()
+    public class UserListViewModel
     {
-        // Тестовые данные
-        Users.Add(new User { Login = "admin", Password = "123" });
-        Users.Add(new User { Login = "user1", Password = "qwerty" });
-    }
+        public ObservableCollection<User> Users { get; set; } = new();
 
-    [RelayCommand]
-    private void AddUser(string login, string password)
-    {
-        if (!string.IsNullOrWhiteSpace(login))
+        public string NewLogin { get; set; } = "";
+        public string NewPassword { get; set; } = "";
+
+        public UserListViewModel()
         {
-            Users.Add(new User { Login = login, Password = password ?? "" });
+            // тестовые данные
+            Users.Add(new User { Login = "admin", Password = "123" });
+            Users.Add(new User { Login = "user", Password = "qwerty" });
         }
-    }
 
-    [RelayCommand]
-    private void DeleteUser(User user)
-    {
-        if (user != null)
-            Users.Remove(user);
+        public void AddUser()
+        {
+            if (!string.IsNullOrWhiteSpace(NewLogin))
+            {
+                Users.Add(new User 
+                { 
+                    Login = NewLogin, 
+                    Password = NewPassword 
+                });
+
+                NewLogin = "";
+                NewPassword = "";
+            }
+        }
+
+        public void DeleteUser(User user)
+        {
+            if (user != null)
+                Users.Remove(user);
+        }
     }
 }
 ```
+
+### 3. Страница с ListBox (UserListView.axaml)
 
 **Views/UserListView.axaml**
 ```xml
@@ -76,62 +75,75 @@ public partial class UserListViewModel : ObservableObject
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="using:AvaloniaApp.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
-             x:Class="AvaloniaApp.Views.UserListView"
-             x:DataType="vm:UserListViewModel">
+             mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="500"
+             x:Class="AvaloniaApp.Views.UserListView">
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="10">
-        <!-- Поля ввода и кнопка Добавить -->
+    <Grid Margin="20" RowDefinitions="Auto,Auto,*,Auto">
+        
+        <!-- Поля добавления -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10">
-            <TextBox Width="150" PlaceholderText="Логин" Text="{Binding NewLogin}" />
-            <TextBox Width="150" PlaceholderText="Пароль" Text="{Binding NewPassword}" />
-            <Button Content="Добавить" Command="{Binding AddUserCommand}" 
-                    CommandParameter="{Binding NewLogin}" />
+            <TextBox Width="200" PlaceholderText="Логин" Text="{Binding NewLogin}"/>
+            <TextBox Width="200" PlaceholderText="Пароль" Text="{Binding NewPassword}"/>
+            <Button Content="Добавить" Click="AddButton_Click"/>
         </StackPanel>
 
         <!-- ListBox -->
-        <ListBox Grid.Row="2" ItemsSource="{Binding Users}" 
-                 SelectedItem="{Binding SelectedUser}">
+        <ListBox Grid.Row="2" ItemsSource="{Binding Users}" Margin="0,20,0,0">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock Text="{Binding Login}" Width="150" />
-                        <TextBlock Text="{Binding Password}" Width="150" />
+                    <StackPanel Orientation="Horizontal" Spacing="15">
+                        <TextBlock Text="{Binding Login}" Width="180"/>
+                        <TextBlock Text="{Binding Password}" Width="180"/>
                         <Button Content="Удалить" 
-                                Command="{Binding $parent[ListBox].((vm:UserListViewModel)DataContext).DeleteUserCommand}"
-                                CommandParameter="{Binding}" />
+                                Click="DeleteButton_Click"
+                                CommandParameter="{Binding}"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <!-- Кнопка тестирования -->
-        <Button Grid.Row="3" Content="Протестировать" HorizontalAlignment="Right" Margin="0,10,0,0" />
     </Grid>
 </UserControl>
 ```
 
-**UserListView.axaml.cs** (code-behind, минимальный)
+**Views/UserListView.axaml.cs**
 ```csharp
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using AvaloniaApp.Models;
 using AvaloniaApp.ViewModels;
 
-namespace AvaloniaApp.Views;
-
-public partial class UserListView : UserControl
+namespace AvaloniaApp.Views
 {
-    public UserListView()
+    public partial class UserListView : UserControl
     {
-        InitializeComponent();
-        DataContext = new UserListViewModel();
+        private readonly UserListViewModel _vm = new();
+
+        public UserListView()
+        {
+            InitializeComponent();
+            DataContext = _vm;
+        }
+
+        private void AddButton_Click(object sender, RoutedEventArgs e)
+        {
+            _vm.AddUser();
+        }
+
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.CommandParameter is User user)
+            {
+                _vm.DeleteUser(user);
+            }
+        }
     }
 }
 ```
 
-### 3. Часть с DataGrid (п. 5.4)
+### 4. DataGrid (вторая часть задания)
 
-**App.axaml** (добавьте стиль DataGrid)
+**App.axaml** (добавьте это):
 ```xml
 <Application.Styles>
     <FluentTheme />
@@ -139,124 +151,114 @@ public partial class UserListView : UserControl
 </Application.Styles>
 ```
 
-**NuGet:** `Avalonia.Controls.DataGrid`
-
 **Views/UserDataGridView.axaml**
 ```xml
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="using:AvaloniaApp.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="500"
-             x:Class="AvaloniaApp.Views.UserDataGridView"
-             x:DataType="vm:UserListViewModel">
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+             x:Class="AvaloniaApp.Views.UserDataGridView">
 
-    <Grid RowDefinitions="Auto,*,Auto" Margin="10">
-        <!-- Поля ввода и кнопка Добавить -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
-            <TextBox Width="180" PlaceholderText="Логин" Text="{Binding NewLogin}" />
-            <TextBox Width="180" PlaceholderText="Пароль" Text="{Binding NewPassword}" />
-            <Button Content="Добавить" Command="{Binding AddUserCommand}" />
+    <Grid Margin="20" RowDefinitions="Auto,*,Auto">
+        
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10">
+            <TextBox Width="200" PlaceholderText="Логин" Text="{Binding NewLogin}"/>
+            <TextBox Width="200" PlaceholderText="Пароль" Text="{Binding NewPassword}"/>
+            <Button Content="Добавить" Click="AddButton_Click"/>
         </StackPanel>
 
-        <DataGrid Grid.Row="1" ItemsSource="{Binding Users}"
+        <DataGrid Grid.Row="1" Margin="0,20,0,0"
+                  ItemsSource="{Binding Users}"
                   CanUserReorderColumns="True"
                   CanUserResizeColumns="True"
                   CanUserSortColumns="True"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="False">
+                  AutoGenerateColumns="False">
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="2*" />
-                <DataGridTextColumn Header="Пароль" Binding="{Binding Password}" Width="2*" />
-
-                <!-- Кнопка Удалить -->
+                <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="2*"/>
+                <DataGridTextColumn Header="Пароль" Binding="{Binding Password}" Width="2*"/>
+                
                 <DataGridTemplateColumn Header="Действия" Width="Auto">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="Удалить" 
-                                    Command="{Binding $parent[DataGrid].((vm:UserListViewModel)DataContext).DeleteUserCommand}"
-                                    CommandParameter="{Binding}" 
-                                    Margin="5" />
+                                    Click="DeleteButton_Click"
+                                    CommandParameter="{Binding}"
+                                    Margin="5"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
-
-        <TextBlock Grid.Row="2" Text="DataGrid готов. Можно перетаскивать/изменять размер/сортировать колонки." Margin="0,10,0,0" />
     </Grid>
 </UserControl>
 ```
 
-**UserDataGridView.axaml.cs**
+**Views/UserDataGridView.axaml.cs**
 ```csharp
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using AvaloniaApp.Models;
 using AvaloniaApp.ViewModels;
 
-namespace AvaloniaApp.Views;
-
-public partial class UserDataGridView : UserControl
+namespace AvaloniaApp.Views
 {
-    public UserDataGridView()
+    public partial class UserDataGridView : UserControl
     {
-        InitializeComponent();
-        DataContext = new UserListViewModel();
+        private readonly UserListViewModel _vm = new();
+
+        public UserDataGridView()
+        {
+            InitializeComponent();
+            DataContext = _vm;
+        }
+
+        private void AddButton_Click(object sender, RoutedEventArgs e)
+        {
+            _vm.AddUser();
+        }
+
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.CommandParameter is User user)
+            {
+                _vm.DeleteUser(user);
+            }
+        }
     }
 }
 ```
 
-### 4. Главное окно (MainWindow.axaml) — для тестирования
+### 5. MainWindow (для проверки)
 
 ```xml
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="using:AvaloniaApp.Views"
-        Title="Лабораторная Avalonia" Width="800" Height="600"
+        Title="Лабораторная работа Avalonia" Width="900" Height="650"
         x:Class="AvaloniaApp.Views.MainWindow">
 
     <TabControl>
-        <TabItem Header="ListBox (5.1-5.3)">
-            <views:UserListView />
+        <TabItem Header="ListBox">
+            <views:UserListView/>
         </TabItem>
-        <TabItem Header="DataGrid (5.4)">
-            <views:UserDataGridView />
+        <TabItem Header="DataGrid">
+            <views:UserDataGridView/>
         </TabItem>
     </TabControl>
 </Window>
 ```
 
-### 5. ViewModel — дополнения для полей ввода (в UserListViewModel)
+**NuGet пакет, который нужно добавить:**
+- `Avalonia.Controls.DataGrid`
 
-Добавьте свойства:
-```csharp
-[ObservableProperty] private string? _newLogin;
-[ObservableProperty] private string? _newPassword;
-```
+---
 
-И обновите `AddUserCommand`:
-```csharp
-[RelayCommand]
-private void AddUser()
-{
-    if (!string.IsNullOrWhiteSpace(NewLogin))
-    {
-        Users.Add(new User { Login = NewLogin, Password = NewPassword ?? "" });
-        NewLogin = string.Empty;
-        NewPassword = string.Empty;
-    }
-}
-```
+**Всё сделано максимально просто:**
+- Без CommunityToolkit
+- Без RelayCommand
+- Без сложных привязок кнопки (использовал code-behind — самый простой способ для студентов)
+- Полностью соответствует пунктам 5.1 — 5.4
 
-### Что сделано строго по заданиям:
-- Класс `User` с `Login`/`Password`
-- `ObservableCollection<User>`
-- `ListBox` + `ItemTemplate` + сложная привязка кнопки Delete через `$parent`
-- `DataGrid` + NuGet + стиль в `App.axaml`
-- Колонки + `DataGridTemplateColumn` с кнопкой «Удалить»
-- `CanUserReorderColumns`, `CanUserResizeColumns`, `CanUserSortColumns`
-- Добавление через поля ввода
-- Всё на MVVM + CommunityToolkit.Mvvm (рекомендуется)
-
-Запусти проект — всё должно работать. Если нужно полный `.zip` проекта или уточнения — скажи!
+Хочешь, я пришлю весь проект в одном сообщении или сделаю ещё проще где-то. Скажи, что нужно поправить.
