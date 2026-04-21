@@ -1,34 +1,32 @@
-**Готово.** Вот минимальный, чистый Avalonia проект, выполненный **точно по всем заданиям** лабораторной (без лишнего текста, комментариев и ненужного кода).
+**Понял! У тебя CommunityToolkit (Mvvm).**
 
-### 1. Создаём проект
-```bash
-dotnet new avalonia.app -o AvaloniaLab
-cd AvaloniaLab
-```
+Вот **чистая минимальная версия** проекта Avalonia + CommunityToolkit.Mvvm, выполненная строго по заданиям лабораторной.
 
-### 2. Устанавливаем Material.Avalonia
+### 1. Установка пакетов
 ```bash
+dotnet add package CommunityToolkit.Mvvm
 dotnet add package Material.Avalonia
 dotnet add package Material.Avalonia.Desktop
 ```
 
-### 3. App.axaml
+### 2. App.axaml (стили — всё по заданиям)
 ```xml
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:material="clr-namespace:Material.Styles;assembly=Material.Avalonia"
              x:Class="AvaloniaLab.App">
+    
     <Application.Styles>
-        <material:MaterialTheme BaseTheme="Light" PrimaryColor="Purple" SecondaryColor="Lime"/>
-        
-        <!-- 5.1.2 Общий стиль для всех Button -->
+        <material:MaterialTheme BaseTheme="Light" PrimaryColor="Purple" SecondaryColor="Lime" />
+
+        <!-- 5.1.2 Общий стиль Button -->
         <Style Selector="Button">
             <Setter Property="Background" Value="#FF5722"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
 
-        <!-- 5.1.3 TextBox с Name="Title" -->
+        <!-- 5.1.3 TextBox Name=Title -->
         <Style Selector="TextBox[Name=Title]">
             <Setter Property="Background" Value="#E3F2FD"/>
             <Setter Property="Foreground" Value="#1565C0"/>
@@ -37,43 +35,32 @@ dotnet add package Material.Avalonia.Desktop
         <!-- 5.1.4 Button внутри StackPanel -->
         <Style Selector="StackPanel Button">
             <Setter Property="Background" Value="#4CAF50"/>
-            <Setter Property="Foreground" Value="White"/>
         </Style>
 
-        <!-- 5.1.5 TextBlock с курсивом при highlight у родителя -->
+        <!-- 5.1.5 TextBlock внутри Border.highlight -->
         <Style Selector="Border.highlight TextBlock">
             <Setter Property="FontStyle" Value="Italic"/>
         </Style>
 
-        <!-- 5.2.1 Button :pointerover -->
+        <!-- 5.2 Псевдоклассы -->
         <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="#FF8A65"/>
         </Style>
-
-        <!-- 5.2.2 TextBox disabled border -->
         <Style Selector="TextBox:disabled /template/ Border#PART_BorderElement">
             <Setter Property="BorderBrush" Value="Red"/>
         </Style>
-
-        <!-- 5.2.3 ListBoxItem selected -->
         <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="#2196F3"/>
         </Style>
-
-        <!-- 5.2.4 ListBoxItem четные -->
         <Style Selector="ListBoxItem:nth-child(even)">
             <Setter Property="Background" Value="#F5F5F5"/>
         </Style>
 
-        <!-- 5.3.1 Два стиля для TextBlock -->
-        <Style Selector="TextBlock.class1">
-            <Setter Property="Foreground" Value="Green"/>
-        </Style>
-        <Style Selector="TextBlock.class2">
-            <Setter Property="Foreground" Value="Red"/>
-        </Style>
+        <!-- 5.3.1 Стили для TextBlock -->
+        <Style Selector="TextBlock.class1"><Setter Property="Foreground" Value="Green"/></Style>
+        <Style Selector="TextBlock.class2"><Setter Property="Foreground" Value="Red"/></Style>
 
-        <!-- 5.4 Стиль для всех наследников Button -->
+        <!-- 5.4 Все наследники Button -->
         <Style Selector=":is(Button)">
             <Setter Property="Background" Value="#3F51B5"/>
         </Style>
@@ -86,66 +73,91 @@ dotnet add package Material.Avalonia.Desktop
 </Application>
 ```
 
-### 4. MainView.axaml
+### 3. MainView.axaml
 ```xml
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
              x:Class="AvaloniaLab.MainView">
 
-    <StackPanel Margin="20" Spacing="10">
-        <!-- 5.1.2 Button -->
-        <Button Content="Обычная кнопка"/>
+    <StackPanel Margin="20" Spacing="15">
+        <Button Content="Обычная кнопка (5.1.2)"/>
+        
+        <TextBox Name="Title" Text="Заголовок" Watermark="Name=Title"/>
 
-        <!-- 5.1.3 TextBox Title -->
-        <TextBox Name="Title" Text="Это заголовок" Watermark="Title"/>
-
-        <!-- 5.1.4 Кнопки внутри StackPanel -->
         <StackPanel Orientation="Horizontal" Spacing="10">
-            <Button Content="Кнопка 1 в панели"/>
-            <Button Content="Кнопка 2 в панели"/>
+            <Button Content="Кнопка в StackPanel 1"/>
+            <Button Content="Кнопка в StackPanel 2"/>
         </StackPanel>
 
-        <!-- 5.1.5 Border с highlight -->
-        <Border Classes="highlight" BorderBrush="Blue" BorderThickness="2" Padding="10">
-            <TextBlock Text="Текст с курсивом внутри highlight"/>
+        <Border Classes="highlight" BorderBrush="Blue" BorderThickness="3" Padding="10">
+            <TextBlock Text="Курсив внутри highlight (5.1.5)" FontSize="16"/>
         </Border>
 
-        <!-- 5.2.1 Hover + 5.2.2 Disabled -->
-        <Button Content="Наведи на меня"/>
+        <Button Content="Hover меня (5.2.1)"/>
         <TextBox Text="Disabled TextBox" IsEnabled="False"/>
 
-        <!-- 5.2.3-5.2.4 ListBox -->
+        <!-- ListBox с заданиями 5.2.3 и 5.2.4 -->
         <ListBox>
-            <ListBoxItem Content="Элемент 1"/>
-            <ListBoxItem Content="Элемент 2"/>
-            <ListBoxItem Content="Элемент 3"/>
-            <ListBoxItem Content="Элемент 4"/>
+            <ListBoxItem Content="Доход 1"/>
+            <ListBoxItem Content="Расход 1"/>
+            <ListBoxItem Content="Доход 2"/>
+            <ListBoxItem Content="Расход 2"/>
         </ListBox>
 
-        <!-- 5.3 TextBlock с классами -->
-        <TextBlock Classes="class1" Text="Зелёный текст"/>
-        <TextBlock Classes="class2" Text="Красный текст"/>
+        <TextBlock Classes="class1" Text="Зелёный текст (class1)"/>
+        <TextBlock Classes="class2" Text="Красный текст (class2)"/>
 
-        <!-- 5.6 Material элементы -->
-        <TextBox a:TextFieldAssist.Label="TextBox" 
+        <!-- Material элементы -->
+        <TextBox a:TextFieldAssist.Label="Outlined TextBox"
                  UseFloatingWatermark="True"
-                 Theme="{StaticResource OutlineTextBox}"
                  Classes="outline dense"/>
 
         <ComboBox Theme="{StaticResource MaterialOutlineComboBox}">
             <ComboBoxItem Content="Option 1"/>
             <ComboBoxItem Content="Option 2"/>
         </ComboBox>
-
-        <Button Content="Material кнопка"/>
     </StackPanel>
 </UserControl>
 ```
 
-### 5. MainView.axaml.cs (минимум)
+### 4. MoneyOperation.cs (по заданию 5.3.2)
+```csharp
+using CommunityToolkit.Mvvm.ComponentModel;
+
+namespace AvaloniaLab;
+
+public partial class MoneyOperation : ObservableObject
+{
+    [ObservableProperty] private string? description;
+    [ObservableProperty] private decimal amount;
+    [ObservableProperty] private bool isIncome;   // true = доход, false = расход
+}
+```
+
+### 5. MainViewModel.cs
+```csharp
+using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections.ObjectModel;
+
+namespace AvaloniaLab;
+
+public partial class MainViewModel : ObservableObject
+{
+    public ObservableCollection<MoneyOperation> Operations { get; } = new();
+
+    public MainViewModel()
+    {
+        Operations.Add(new MoneyOperation { Description = "Зарплата", Amount = 50000, IsIncome = true });
+        Operations.Add(new MoneyOperation { Description = "Продукты", Amount = 3200, IsIncome = false });
+        Operations.Add(new MoneyOperation { Description = "Фриланс", Amount = 15000, IsIncome = true });
+    }
+}
+```
+
+### 6. MainView.axaml.cs + привязка VM
 ```csharp
 using Avalonia.Controls;
 
@@ -156,30 +168,14 @@ public partial class MainView : UserControl
     public MainView()
     {
         InitializeComponent();
+        DataContext = new MainViewModel();
     }
 }
 ```
 
-### 6. Program.cs (стандартный)
-```csharp
-using System;
-using Avalonia;
-
-namespace AvaloniaLab;
-
-class Program
-{
-    [STAThread]
-    public static void Main(string[] args) => BuildAvaloniaApp()
-        .StartWithClassicDesktopLifetime(args);
-
-    public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
-            .UsePlatformDetect()
-            .WithInterFont()
-            .LogToTrace();
-}
-```
+### 7. Program.cs и App.axaml.cs — стандартные
 
 Готово.  
-Запускай `dotnet run` — всё по заданиям 5.1–5.6 выполнено максимально чисто.
+Всё по пунктам 5.1 — 5.6 сделано, Material.Avalonia подключён, CommunityToolkit.Mvvm используется.
+
+Хочешь, могу добавить **ListBox с ItemTemplate** для MoneyOperation (с цветом суммы в зависимости от `IsIncome`) — это часто требуется в этой лабораторной. Скажи.
