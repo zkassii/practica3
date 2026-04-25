@@ -1,0 +1,229 @@
+Отлично, всё вижу. Делаю обе практические.
+
+---
+
+# Практическая работа №9 — События в MySQL
+
+## 5.1.1 — Включить планировщик событий
+
+В конфигурационном файле `my.ini` (или `my.cnf`) после строки `[mysqld]` добавить:
+
+```ini
+[mysqld]
+event_scheduler = on
+```
+
+**Зачем:** По умолчанию планировщик событий выключен. Без этого события создаться могут, но выполняться не будут.
+
+После изменения — **перезапустить MySQL сервер**.
+
+---
+
+## 5.1.2 — Проверить что планировщик запущен
+
+```sql
+SHOW PROCESSLIST;
+```
+
+**Зачем:** Смотрим список процессов MySQL. Если планировщик включён — в списке будет строка с `event_scheduler`. Если её нет — не включился.
+
+---
+
+## 5.1.3 — Создать таблицу myEventTable
+
+```sql
+CREATE TABLE myEventTable (
+    id        INT AUTO_INCREMENT PRIMARY KEY,  -- целочисленный, автоинкремент, первичный ключ
+    eventTime DATETIME,                         -- дата и время события
+    eventName VARCHAR(50)                       -- название события, длина 50
+);
+```
+
+**Зачем:** В эту таблицу все события будут писать записи при срабатывании. Без неё события некуда записывать.
+
+---
+
+## 5.1.4 — Событие event1 (каждые 10 секунд, 5 минут)
+
+```sql
+CREATE EVENT event1
+ON SCHEDULE EVERY 10 SECOND
+STARTS NOW()
+ENDS NOW() + INTERVAL 5 MINUTE
+ON COMPLETION PRESERVE          -- не удалять после завершения
+DO
+    INSERT INTO myEventTable (eventTime, eventName)
+    VALUES (NOW(), 'event1');   -- пишем текущие дату/время и имя события
+```
+
+**Зачем что:**
+- `EVERY 10 SECOND` — срабатывает каждые 10 секунд
+- `ENDS NOW() + INTERVAL 5 MINUTE` — работает ровно 5 минут
+- `ON COMPLETION PRESERVE` — после окончания событие остаётся в БД (не удаляется)
+- `INSERT INTO myEventTable` — при каждом срабатывании добавляет строку в таблицу
+
+---
+
+## 5.2 — Событие event2 (каждые 2 минуты 30 секунд, сутки)
+
+```sql
+CREATE EVENT event2
+ON SCHEDULE EVERY 150 SECOND    -- 2 мин 30 сек = 150 секунд
+STARTS NOW()
+ENDS NOW() + INTERVAL 1 DAY
+ON COMPLETION PRESERVE
+DO
+    INSERT INTO myEventTable (eventTime, eventName)
+    VALUES (NOW(), 'event2');
+```
+
+**Зачем:** MySQL не поддерживает `EVERY 2 MINUTE 30 SECOND` напрямую, поэтому переводим в секунды: 2×60+30 = **150 секунд**.
+
+---
+
+## 5.3 — Событие event3 (однократно, потом удалить)
+
+```sql
+CREATE EVENT event3
+ON SCHEDULE AT NOW() + INTERVAL 1 MINUTE   -- выполнится через 1 минуту (укажи своё время)
+ON COMPLETION NOT PRESERVE                  -- после выполнения УДАЛИТЬ из БД
+DO
+    INSERT INTO myEventTable (eventTime, eventName)
+    VALUES (NOW(), 'event3');
+```
+
+**Зачем:**
+- `AT` вместо `EVERY` — означает однократное выполнение в конкретный момент
+- `ON COMPLETION NOT PRESERVE` — после выполнения событие **автоматически удаляется** из БД (задание требует именно это)
+
+---
+
+## 5.4 — Событие eventAuthor (ежедневно в 15:00)
+
+```sql
+CREATE EVENT eventAuthor
+ON SCHEDULE EVERY 1 DAY
+STARTS (DATE(NOW()) + INTERVAL 15 HOUR)    -- сегодня в 15:00
+ON COMPLETION PRESERVE
+DO BEGIN
+    -- Сначала пишем в таблицу событий
+    INSERT INTO myEventTable (eventTime, eventName)
+    VALUES (NOW(), 'eventAuthor');
+
+    -- Затем удаляем авторов без книг
+    DELETE FROM Авторы
+    WHERE id NOT IN (
+        SELECT DISTINCT авторId FROM Книги
+    );
+END;
+```
+
+**Зачем:**
+- `BEGIN...END` — нужен когда в событии несколько команд
+- `DELETE FROM Авторы WHERE id NOT IN (SELECT авторId FROM Книги)` — находит авторов, которых нет ни в одной книге, и удаляет их
+- Имена таблиц `Авторы` / `Книги` и столбцов замени на реальные из своей БД Market
+
+---
+
+## 5.5 — Просмотреть все события через information_schema
+
+```sql
+SELECT *
+FROM information_schema.EVENTS;
+```
+
+**Зачем:** Показывает все события во всех БД: имя, статус, расписание, когда запускается, когда заканчивается, тело события. Так можно убедиться что все 4 события созданы правильно.
+
+---
+---
+
+# Практическая работа №10 — Модификация схемы БД (DDL-запросы)
+
+## 5.1 — Создать таблицу BooksInfo
+
+```sql
+CREATE TABLE BooksInfo (
+    kod        INT PRIMARY KEY,      -- код книги = первичный ключ
+    nazvanie   VARCHAR(255),         -- название книги
+    familiya   VARCHAR(100),         -- фамилия автора (совпадает с типом в таблице Авторы)
+    imya       VARCHAR(100),         -- имя автора
+    god        YEAR,                 -- год выпуска
+    cena       DECIMAL(10,2),        -- цена
+    kol_str    INT                   -- количество страниц
+);
+```
+
+**Зачем:** `CREATE TABLE` создаёт новую таблицу. Типы данных столбцов **должны совпадать** с типами в таблицах Авторы и Книги — иначе JOIN и связи работать не будут. Код книги — PRIMARY KEY.
+
+---
+
+## 5.2 — Сделать kod автоинкрементным
+
+```sql
+ALTER TABLE BooksInfo
+MODIFY COLUMN kod INT AUTO_INCREMENT;
+```
+
+**Зачем:** `ALTER TABLE ... MODIFY COLUMN` изменяет существующий столбец. `AUTO_INCREMENT` — MySQL сам будет подставлять следующий номер при вставке новой строки, не нужно указывать вручную.
+
+---
+
+## 5.3 — Добавить уникальность по 3 столбцам (название + имя + фамилия)
+
+```sql
+ALTER TABLE BooksInfo
+ADD CONSTRAINT uq_book_author UNIQUE (nazvanie, imya, familiya);
+```
+
+**Зачем:** Ограничение `UNIQUE` на **три столбца сразу** — это составной уникальный индекс. Он запрещает дублировать комбинацию название+имя+фамилия. Одно и то же имя или название отдельно — разрешено, а полное совпадение всех трёх — запрещено.
+
+---
+
+## 5.4 — Добавить необязательное поле «Дата поступления»
+
+```sql
+ALTER TABLE BooksInfo
+ADD COLUMN data_postuplenia DATE NULL;   -- NULL = необязательное (можно не заполнять)
+```
+
+**Зачем:** `ADD COLUMN` добавляет новый столбец в уже существующую таблицу. `NULL` означает что поле необязательное — при вставке строки его можно не указывать.
+
+---
+
+## 5.5 — Удалить поле «Количество страниц»
+
+```sql
+ALTER TABLE BooksInfo
+DROP COLUMN kol_str;
+```
+
+**Зачем:** `DROP COLUMN` полностью удаляет столбец и все данные в нём из таблицы. Обратно не вернуть — поэтому в реальных проектах делают с осторожностью.
+
+---
+
+**Итого все 5 команд по порядку для практики 10:**
+
+```sql
+-- 5.1 Создать таблицу
+CREATE TABLE BooksInfo (
+    kod        INT PRIMARY KEY,
+    nazvanie   VARCHAR(255),
+    familiya   VARCHAR(100),
+    imya       VARCHAR(100),
+    god        YEAR,
+    cena       DECIMAL(10,2),
+    kol_str    INT
+);
+
+-- 5.2 Сделать kod автоинкрементным
+ALTER TABLE BooksInfo MODIFY COLUMN kod INT AUTO_INCREMENT;
+
+-- 5.3 Уникальность по 3 столбцам
+ALTER TABLE BooksInfo ADD CONSTRAINT uq_book_author UNIQUE (nazvanie, imya, familiya);
+
+-- 5.4 Добавить дату поступления (необязательное)
+ALTER TABLE BooksInfo ADD COLUMN data_postuplenia DATE NULL;
+
+-- 5.5 Удалить количество страниц
+ALTER TABLE BooksInfo DROP COLUMN kol_str;
+```
